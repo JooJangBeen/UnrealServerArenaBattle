@@ -17,7 +17,7 @@ class ARENABATTLE_API AABCharacterPlayer : public AABCharacterBase, public IABCh
 	GENERATED_BODY()
 	
 public:
-	AABCharacterPlayer();
+	AABCharacterPlayer(const FObjectInitializer& ObjectInitializer);
 
 protected:
 	virtual void BeginPlay() override;
@@ -62,6 +62,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> AttackAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> TeleportAction;
 
 	void ShoulderMove(const FInputActionValue& Value);
 	void ShoulderLook(const FInputActionValue& Value);
@@ -130,7 +133,12 @@ protected:
 	//공격을 시작한 후에 이정도 시간은 지나야 판정이 가능하다고 판단할 기준값.
 	float AcceptMinCheckTime = 0.15f;
 
-// UI Section
+	// UI Section
 protected:
 	virtual void SetupHUDWidget(class UABHUDWidget* InHUDWidget) override;
+
+	//Teleport Section.
+protected:
+	//텔레포트 입력이 눌렀을때 바인딩을 통해 호출될 함수.
+	void Teleport();
 };

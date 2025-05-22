@@ -20,7 +20,10 @@
 #include "Net/UnrealNetwork.h"
 #include "EngineUtils.h"
 
-AABCharacterPlayer::AABCharacterPlayer()
+#include "ABCharacterMovementComponent.h"
+
+AABCharacterPlayer::AABCharacterPlayer(const FObjectInitializer& ObjectInitializer)
+	:Super(ObjectInitializer.SetDefaultSubobjectClass<UABCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	// Camera
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -68,6 +71,14 @@ AABCharacterPlayer::AABCharacterPlayer()
 	{
 		AttackAction = InputActionAttackRef.Object;
 	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> InputActionTeleportRef(TEXT("/Script/EnhancedInput.InputAction'/Game/ArenaBattle/Input/Actions/IA_Teleport.IA_Teleport'"));
+	if (nullptr != InputActionTeleportRef.Object)
+	{
+		TeleportAction = InputActionTeleportRef.Object;
+	}
+
+	
 
 	CurrentCharacterControlType = ECharacterControlType::Quater;
 
@@ -174,6 +185,7 @@ void AABCharacterPlayer::SetupPlayerInputComponent(class UInputComponent* Player
 	EnhancedInputComponent->BindAction(ShoulderLookAction, ETriggerEvent::Triggered, this, &AABCharacterPlayer::ShoulderLook);
 	EnhancedInputComponent->BindAction(QuaterMoveAction, ETriggerEvent::Triggered, this, &AABCharacterPlayer::QuaterMove);
 	EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &AABCharacterPlayer::Attack);
+	EnhancedInputComponent->BindAction(TeleportAction, ETriggerEvent::Triggered, this, &AABCharacterPlayer::Teleport);
 }
 
 void AABCharacterPlayer::ChangeCharacterControl()
@@ -329,6 +341,18 @@ void AABCharacterPlayer::Attack()
 		//GetWorld()->GetTimeSeconds()함수는 현재 월드의 시간을 반환.
 		//서버의 시간을 기준으로 해야함.
 		ServerRPCAttack(GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
+	}
+}
+
+void AABCharacterPlayer::Teleport()
+{
+	AB_LOG(LogABTeleport, Log, TEXT("%s"), TEXT("Begin"));
+
+	UABCharacterMovementComponent* ABMovement = Cast<UABCharacterMovementComponent>(GetCharacterMovement());
+
+	if (ABMovement)
+	{
+		ABMovement->SetTeleportCommand();
 	}
 }
 
