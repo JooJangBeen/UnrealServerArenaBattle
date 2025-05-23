@@ -268,10 +268,10 @@ void AABCharacterBase::SetupCharacterWidget(UABUserWidget* InUserWidget)
 	UABHpBarWidget* HpBarWidget = Cast<UABHpBarWidget>(InUserWidget);
 	if (HpBarWidget)
 	{
-		HpBarWidget->UpdateStat(Stat->GetBaseStat(), Stat->GetModifierStat());
-		HpBarWidget->UpdateHpBar(Stat->GetCurrentHp());
+		//HpBarWidget->UpdateStat(Stat->GetBaseStat(), Stat->GetModifierStat());
+		HpBarWidget->UpdateHpBar(Stat->GetCurrentHp(), Stat->GetMaxHp());
 		Stat->OnHpChanged.AddUObject(HpBarWidget, &UABHpBarWidget::UpdateHpBar);
-		Stat->OnStatChanged.AddUObject(HpBarWidget, &UABHpBarWidget::UpdateStat);
+		//Stat->OnStatChanged.AddUObject(HpBarWidget, &UABHpBarWidget::UpdateStat);
 	}
 }
 
@@ -285,10 +285,13 @@ void AABCharacterBase::TakeItem(UABItemData* InItemData)
 
 void AABCharacterBase::DrinkPotion(UABItemData* InItemData)
 {
-	UABPotionItemData* PotionItemData = Cast<UABPotionItemData>(InItemData);
-	if (PotionItemData)
+	if (HasAuthority())
 	{
-		Stat->HealHp(PotionItemData->HealAmount);
+		UABPotionItemData* PotionItemData = Cast<UABPotionItemData>(InItemData);
+		if (PotionItemData)
+		{
+			Stat->HealHp(PotionItemData->HealAmount);
+		}
 	}
 }
 
@@ -302,16 +305,30 @@ void AABCharacterBase::EquipWeapon(UABItemData* InItemData)
 			WeaponItemData->WeaponMesh.LoadSynchronous();
 		}
 		Weapon->SetSkeletalMesh(WeaponItemData->WeaponMesh.Get());
-		Stat->SetModifierStat(WeaponItemData->ModifierStat);
+		//Stat->SetModifierStat(WeaponItemData->ModifierStat); 서버 동기화로 바꾸기 위해 주석 처리.
+	}
+
+	//서버 로직.
+	if (HasAuthority())
+	{
+		//아이템 유혀성 검사.
+		if (WeaponItemData)
+		{
+			//스탯 관리는 서버에서만 하도록 변경.
+			Stat->SetModifierStat(WeaponItemData->ModifierStat);
+		}
 	}
 }
 
 void AABCharacterBase::ReadScroll(UABItemData* InItemData)
 {
-	UABScrollItemData* ScrollItemData = Cast<UABScrollItemData>(InItemData);
-	if (ScrollItemData)
+	if (HasAuthority())
 	{
-		Stat->AddBaseStat(ScrollItemData->BaseStat);
+		UABScrollItemData* ScrollItemData = Cast<UABScrollItemData>(InItemData);
+		if (ScrollItemData)
+		{
+			Stat->AddBaseStat(ScrollItemData->BaseStat);
+		}	
 	}
 }
 
@@ -329,4 +346,19 @@ void AABCharacterBase::ApplyStat(const FABCharacterStat& BaseStat, const FABChar
 {
 	float MovementSpeed = (BaseStat + ModifierStat).MovementSpeed;
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+}
+
+void AABCharacterBase::MeshLoadCompleted()
+{
+	if (MeshHandle.IsValid())
+	{
+		USkeletalMesh* NewMesh = Cast<USkeletalMesh>(MeshHandle->GetLoadedAsset());
+		if (NewMesh)
+		{
+			GetMesh()->SetSkeletalMesh(NewMesh);
+			GetMesh()->SetHiddenInGame(false);
+		}
+	}
+
+	MeshHandle->ReleaseHandle();
 }

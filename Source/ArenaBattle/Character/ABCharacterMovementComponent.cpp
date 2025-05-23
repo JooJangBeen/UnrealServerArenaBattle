@@ -78,6 +78,7 @@ void UABCharacterMovementComponent::UpdateFromCompressedFlags(uint8 Flags)
 {
 	Super::UpdateFromCompressedFlags(Flags);
 
+	//클라이언트에서 인코딩 해서 보내 플래그 체크
 	bPressedTeleport = ((Flags & FSavedMove_Character::FLAG_Custom_0) != 0);
 	bDidTeleport = ((Flags & FSavedMove_Character::FLAG_Custom_1) != 0);
 

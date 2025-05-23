@@ -11,7 +11,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(Config=ArenaBattle)
 class ARENABATTLE_API AABCharacterPlayer : public AABCharacterBase, public IABCharacterHUDInterface
 {
 	GENERATED_BODY()
@@ -25,6 +25,11 @@ protected:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_Owner() override;
 	virtual void PostNetInit() override;
+
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
+	//플레이어 스테이트가 클라이언트에 동기화 될때 호출.
+	virtual void OnRep_PlayerState() override;
 
 public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -141,4 +146,22 @@ protected:
 protected:
 	//텔레포트 입력이 눌렀을때 바인딩을 통해 호출될 함수.
 	void Teleport();
+
+	//PVP Section.
+public:
+	//캐릭터가 죽었을때 리셋하는 함수.
+	void ResetPlayer();
+
+	//공격을 해제할 때 사용할 함수.
+	void ResetAttack();
+
+	//플레이어 스테이트로부터 메시 정보를 업데이트 할때 사용할 함수.
+	void UpdateMeshFromPlayerState();
+
+	//리스폰 관련 처리를 위한 타이머 핸들.
+	FTimerHandle AttackTimerHandle;
+	FTimerHandle DeadTimerHandle;
+
+	UPROPERTY(config)
+	TArray<FSoftObjectPath> PlayerMeshes;
 };
